@@ -35,12 +35,12 @@ import io.jenkins.update_center.json.TieredUpdateSitesGenerator;
 import io.jenkins.update_center.json.PluginDocumentationUrlsRoot;
 import io.jenkins.update_center.wrappers.AlphaBetaOnlyRepository;
 import io.jenkins.update_center.wrappers.StableWarMavenRepository;
-import io.jenkins.update_center.wrappers.VersionCappedMavenRepository;
 import org.apache.commons.io.IOUtils;
 import io.jenkins.update_center.json.PluginVersionsRoot;
 import io.jenkins.update_center.json.ReleaseHistoryRoot;
 import io.jenkins.update_center.json.UpdateCenterRoot;
 import io.jenkins.update_center.wrappers.TruncatedMavenRepository;
+import io.jenkins.update_center.wrappers.VersionCappedMavenRepository;
 import io.jenkins.update_center.wrappers.AllowedArtifactsListMavenRepository;
 import org.kohsuke.args4j.ClassParser;
 import org.kohsuke.args4j.CmdLineException;
@@ -161,6 +161,7 @@ public class Main {
         rootLogger.setLevel(Level.INFO);
         for (Handler h : rootLogger.getHandlers()) {
             if (h instanceof ConsoleHandler) {
+                System.out.println("handler is instance of ConsoleHandler");
                 h.setFormatter(new SupportLogFormatter());
             }
             h.setLevel(Level.ALL);
@@ -171,6 +172,7 @@ public class Main {
 
     public int run(String[] args) throws Exception {
         CmdLineParser p = new CmdLineParser(this);
+
         new ClassParser().parse(signer, p);
         new ClassParser().parse(metadataWriter, p);
         new ClassParser().parse(directoryTreeBuilder, p);
@@ -178,6 +180,7 @@ public class Main {
             p.parseArgument(args);
 
             if (argumentsFile == null) {
+                LOGGER.log(Level.INFO, "No arguments file is passed.");
                 run();
             } else {
                 List<String> invocations = IOUtils.readLines(Files.newBufferedReader(argumentsFile.toPath(), StandardCharsets.UTF_8));
@@ -186,6 +189,7 @@ public class Main {
                     if (!line.trim().startsWith("#") && !line.trim().isEmpty()) { // TODO more flexible comments support, e.g. end-of-line
 
                         LOGGER.log(Level.INFO, "Running with args: " + line);
+                        
                         // TODO combine args array and this list
                         String[] invocationArgs = line.trim().split(" +");
 
@@ -240,10 +244,12 @@ public class Main {
     public void run() throws Exception {
 
         if (level != null) {
+            LOGGER.log(level.INFO, "Log level is not null, setting package_logger log level.");
             PACKAGE_LOGGER.setLevel(level);
         }
-
+        LOGGER.log(level.INFO, "Creating MavenRepository.");
         MavenRepository repo = createRepository();
+        LOGGER.log(level.INFO, "Initializing latest plugin versions.");
         initializeLatestPluginVersions(skipLatestPluginRelease);
 
         if (tierListFile != null) {
@@ -328,7 +334,7 @@ public class Main {
     }
 
     private MavenRepository createRepository() throws Exception {
-
+        LOGGER.log(level.INFO, "getting repo instance from Default MavenRepositoryBuilder.");
         MavenRepository repo = DefaultMavenRepositoryBuilder.getInstance();
         if (allowedArtifactsListFile != null) {
             final Properties properties = new Properties();

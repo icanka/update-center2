@@ -74,7 +74,7 @@ public class JsonChecksumTest {
             foo = "Quuux";
         }
 
-        public JSONObject toJSON() {
+        public JSONObject toJSON() {testJsonChecksum
             JSONObject o = new JSONObject();
             o.put("bar", bar);
             o.put("foo", foo);

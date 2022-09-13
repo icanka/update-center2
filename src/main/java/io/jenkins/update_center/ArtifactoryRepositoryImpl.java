@@ -160,7 +160,9 @@ public class ArtifactoryRepositoryImpl extends BaseMavenRepository {
         try (final ResponseBody body = HttpHelper.body(client.newCall(request).execute())) {
             final MediaType mediaType = body.contentType();
             JsonResponse json = JSON.parseObject(body.byteStream(), mediaType == null ? StandardCharsets.UTF_8 : mediaType.charset(), JsonResponse.class);
-            json.results.forEach(it -> this.files.put("/" + it.path + "/" + it.name, it));
+            json.results.forEach(
+                it -> this.files.put("/" + it.path + "/" + it.name, it)
+                );
         }
         this.poms = this.files.values().stream().filter(it -> it.name.endsWith(".pom")).map(ArtifactoryRepositoryImpl::toGav).filter(Objects::nonNull).collect(Collectors.toSet());
         this.plugins = this.files.values().stream().filter(it -> it.name.endsWith(".hpi") || it.name.endsWith(".jpi")).map(ArtifactoryRepositoryImpl::toGav).filter(Objects::nonNull).collect(Collectors.toSet());
