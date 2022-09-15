@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
 # Usage: SECRET=dirname ./site/generate.sh "./www2" "./download"
+
+SIMPLE_SCRIPT_DIR="$( dirname "$0" )"
+MAIN_DIR="$( readlink -f "$SIMPLE_SCRIPT_DIR/../" 2>/dev/null || greadlink -f "$SIMPLE_SCRIPT_DIR/../" )" || { echo "Failed to determine script directory using (g)readlink -f" >&2 ; exit 1 ; }
+source ${MAIN_DIR}/setenv.sh
+
 [[ $# -gt 1 ]] || { echo "Usage: $0 <www root dir> <download root dir> [extra update-center2.jar args ...]" >&2 ; exit 1 ; }
 [[ -n "$1" ]] || { echo "Non-empty www root dir required" >&2 ; exit 1 ; }
 [[ -n "$2" ]] || { echo "Non-empty download root dir required" >&2 ; exit 1 ; }
@@ -44,25 +49,28 @@ for tool in "${TOOLS[@]}" ; do
 done
 
 # We have associated resource files, so determine script directory -- greadlink is GNU coreutils readlink on Mac OS with Homebrew
-SIMPLE_SCRIPT_DIR="$( dirname "$0" )"
-MAIN_DIR="$( readlink -f "$SIMPLE_SCRIPT_DIR/../" 2>/dev/null || greadlink -f "$SIMPLE_SCRIPT_DIR/../" )" || { echo "Failed to determine script directory using (g)readlink -f" >&2 ; exit 1 ; }
-
-echo "Main directory: $MAIN_DIR"
+echo "Script File: ${SIMPLE_SCRIPT_DIR}"
+echo "Main dir: ${MAIN_DIR}"
+echo "Creating tmp directory"
 mkdir -p "$MAIN_DIR"/tmp/
 
-version=3.13
+version=3.14
 coordinates=org/jenkins-ci/update-center2/$version/update-center2-$version-bin.zip
+coordinates=$MAIN_DIR/target/update-center2-$version-bin.zip
+echo "Project zip file coordinates: ${coordinates}"
 
-if [[ -f "$MAIN_DIR"/tmp/generator-$version.zip ]] ; then
-  echo "tmp/generator-$version.zip already exists, skipping download"
+if [[ -f "${MAIN_DIR}"/target/update-center2-"${version}"-SNAPSHOT-bin.zip ]] ; then
+  echo "target/update-center2-*-SNAPSHOT-bin.zip already exists"
 else
-  echo "tmp/generator-$version.zip does not exist, downloading ..."
-  rm -rf "$MAIN_DIR"/tmp/generator*.zip
-  wget --no-verbose -O "$MAIN_DIR"/tmp/generator-$version.zip "https://repo.jenkins-ci.org/releases/$coordinates"
+  echo "target/update-center2-*-SNAPSHOT-bin.zip does not exists."
+  exit 1
 fi
 
 rm -rf "$MAIN_DIR"/tmp/generator/
-unzip -q "$MAIN_DIR"/tmp/generator-$version.zip -d "$MAIN_DIR"/tmp/generator/
+#### unzip -q "$MAIN_DIR"/tmp/generator-$version.zip -d "$MAIN_DIR"/tmp/generator/
+echo "Extracting zip contents under ${MAIN_DIR}/tmp/generator"
+unzip -q "$MAIN_DIR"/target/update-center2-*-SNAPSHOT-bin.zip -d "$MAIN_DIR"/tmp/generator/
+echo "SUCCESS"
 
 function execute {
   # The fastjson library cannot handle a file.encoding of US-ASCII even when manually specifying the encoding at every opportunity, so set a sane default here.
@@ -73,6 +81,7 @@ function execute {
 }
 
 execute --dynamic-tier-list-file tmp/tiers.json
+touch $MAIN_DIR/SUCCESS
 readarray -t WEEKLY_RELEASES < <( jq --raw-output '.weeklyCores[]' tmp/tiers.json ) || { echo "Failed to determine weekly tier list" >&2 ; exit 1 ; }
 readarray -t STABLE_RELEASES < <( jq --raw-output '.stableCores[]' tmp/tiers.json ) || { echo "Failed to determine stable tier list" >&2 ; exit 1 ; }
 
@@ -110,10 +119,11 @@ function sanity-check {
 # We generate tiered update sites for all core releases newer than
 # about 13 months that are actually used as plugin dependencies.
 # This supports updating Jenkins (core) once a year while getting offered compatible plugin updates.
-for version in "${WEEKLY_RELEASES[@]}" ; do
-  # For mainline, advertising the latest core
-  generate --limit-plugin-core-dependency "$version" --write-latest-core --latest-links-directory "$WWW_ROOT_DIR/dynamic-$version/latest" --www-dir "$WWW_ROOT_DIR/dynamic-$version"
-done
+
+### for version in "${WEEKLY_RELEASES[@]}" ; do
+###   # For mainline, advertising the latest core
+###   generate --limit-plugin-core-dependency "$version" --write-latest-core --latest-links-directory "$WWW_ROOT_DIR/dynamic-$version/latest" --www-dir "$WWW_ROOT_DIR/dynamic-$version"
+### done
 
 for version in "${STABLE_RELEASES[@]}" ; do
   # For LTS, advertising the latest LTS core
@@ -123,23 +133,25 @@ done
 # Experimental update center without version caps, including experimental releases.
 # This is not a part of the version-based redirection rules, admins need to manually configure it.
 # Generate this first, including --downloads-directory, as this includes all releases, experimental and otherwise.
-generate --www-dir "$WWW_ROOT_DIR/experimental" --generate-recent-releases --with-experimental --downloads-directory "$DOWNLOAD_ROOT_DIR" --latest-links-directory "$WWW_ROOT_DIR/experimental/latest"
+
+### generate --www-dir "$WWW_ROOT_DIR/experimental" --generate-recent-releases --with-experimental --downloads-directory "$DOWNLOAD_ROOT_DIR" --latest-links-directory "$WWW_ROOT_DIR/experimental/latest"
 
 # Current update site without version caps, excluding experimental releases.
 # This generates -download after the experimental update site above to change the 'latest' symlinks to the latest released version.
 # This also generates --download-links-directory to only visibly show real releases on index.html pages.
-generate --generate-release-history --generate-recent-releases --generate-plugin-versions --generate-plugin-documentation-urls \
-    --write-latest-core --write-plugin-count \
-    --www-dir "$WWW_ROOT_DIR/current" --download-links-directory "$WWW_ROOT_DIR/download" --downloads-directory "$DOWNLOAD_ROOT_DIR" --latest-links-directory "$WWW_ROOT_DIR/current/latest"
+
+### generate --generate-release-history --generate-recent-releases --generate-plugin-versions --generate-plugin-documentation-urls \
+###     --write-latest-core --write-plugin-count \
+###     --www-dir "$WWW_ROOT_DIR/current" --download-links-directory "$WWW_ROOT_DIR/download" --downloads-directory "$DOWNLOAD_ROOT_DIR" --latest-links-directory "$WWW_ROOT_DIR/current/latest"
 
 # Actually run the update center build.
 execute --resources-dir "$MAIN_DIR"/resources --arguments-file "$MAIN_DIR"/tmp/args.lst
 
 # Generate symlinks to global /updates directory (created by crawler)
-for version in "${WEEKLY_RELEASES[@]}" ; do
-  sanity-check "$WWW_ROOT_DIR/dynamic-$version"
-  ln -sf ../updates "$WWW_ROOT_DIR/dynamic-$version/updates"
-done
+# for version in "${WEEKLY_RELEASES[@]}" ; do
+#   sanity-check "$WWW_ROOT_DIR/dynamic-$version"
+#   ln -sf ../updates "$WWW_ROOT_DIR/dynamic-$version/updates"
+# done
 
 for version in "${STABLE_RELEASES[@]}" ; do
   sanity-check "$WWW_ROOT_DIR/dynamic-stable-$version"
@@ -149,10 +161,10 @@ for version in "${STABLE_RELEASES[@]}" ; do
   lastLTS=dynamic-stable-$version
 done
 
-sanity-check "$WWW_ROOT_DIR/experimental"
-sanity-check "$WWW_ROOT_DIR/current"
-ln -sf ../updates "$WWW_ROOT_DIR/experimental/updates"
-ln -sf ../updates "$WWW_ROOT_DIR/current/updates"
+### sanity-check "$WWW_ROOT_DIR/experimental"
+### sanity-check "$WWW_ROOT_DIR/current"
+### ln -sf ../updates "$WWW_ROOT_DIR/experimental/updates"
+### ln -sf ../updates "$WWW_ROOT_DIR/current/updates"
 
 
 # generate symlinks to retain compatibility with past layout and make Apache index useful

@@ -1,0 +1,1 @@
+--generate-release-history --generate-plugin-versions --limit-plugin-core-dependency 2.346.999 --generate-plugin-documentation-urls --write-latest-core --write-plugin-count --www-dir ./www2/current --download-links-directory ./www2/download --downloads-directory ./download --latest-links-directory ./www2/current/latest
