@@ -82,8 +82,12 @@ function execute {
 
 execute --dynamic-tier-list-file tmp/tiers.json
 touch $MAIN_DIR/SUCCESS
-readarray -t WEEKLY_RELEASES < <( jq --raw-output '.weeklyCores[]' tmp/tiers.json ) || { echo "Failed to determine weekly tier list" >&2 ; exit 1 ; }
-readarray -t STABLE_RELEASES < <( jq --raw-output '.stableCores[]' tmp/tiers.json ) || { echo "Failed to determine stable tier list" >&2 ; exit 1 ; }
+
+# We don't want weekly releases
+#readarray -t WEEKLY_RELEASES < <( jq --raw-output '.weeklyCores[]' tmp/tiers.json ) || { echo "Failed to determine weekly tier list" >&2 ; exit 1 ; }
+
+# Get only the last five stable core releases from the json.
+readarray -t STABLE_RELEASES < <( jq --raw-output '.stableCores[-12:] | .[]' tmp/tiers.json ) || { echo "Failed to determine stable tier list" >&2 ; exit 1 ; }
 
 # Workaround for https://github.com/jenkinsci/docker/issues/954 -- still generate fixed tier update sites
 readarray -t RELEASES < <( curl --silent --fail 'https://repo.jenkins-ci.org/api/search/versions?g=org.jenkins-ci.main&a=jenkins-core&repos=releases&v=?.*.1' | jq --raw-output '.results[].version' | head -n 5 | $SORT --version-sort ) || { echo "Failed to retrieve list of recent LTS releases" >&2 ; exit 1 ; }
@@ -93,7 +97,7 @@ rm -rf "$WWW_ROOT_DIR"
 mkdir -p "$WWW_ROOT_DIR"
 
 # Generate htaccess file
-"$( dirname "$0" )"/generate-htaccess.sh "${WEEKLY_RELEASES[@]}" "${STABLE_RELEASES[@]}" > "$WWW_ROOT_DIR/.htaccess"
+"$( dirname "$0" )"/generate-htaccess.sh "${STABLE_RELEASES[@]}" > "$WWW_ROOT_DIR/.htaccess"
 
 # Reset arguments file
 echo "# one update site per line" > "$MAIN_DIR"/tmp/args.lst
