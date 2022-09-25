@@ -12,12 +12,17 @@
 /.classpath
 /.project
 
+
 # Standard directory names (see site/publish.sh)
 /download/
 /www2/
 
+# update site itself
+/update-site
+
 # Execution caches dirs
 /caches/
+caches.tar
 /tmp/
 
 # Mac OS X

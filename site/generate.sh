@@ -4,7 +4,7 @@
 
 SIMPLE_SCRIPT_DIR="$( dirname "$0" )"
 MAIN_DIR="$( readlink -f "$SIMPLE_SCRIPT_DIR/../" 2>/dev/null || greadlink -f "$SIMPLE_SCRIPT_DIR/../" )" || { echo "Failed to determine script directory using (g)readlink -f" >&2 ; exit 1 ; }
-source ${MAIN_DIR}/setenv.sh
+source ${SIMPLE_SCRIPT_DIR}/setenv.sh
 
 [[ $# -gt 1 ]] || { echo "Usage: $0 <www root dir> <download root dir> [extra update-center2.jar args ...]" >&2 ; exit 1 ; }
 [[ -n "$1" ]] || { echo "Non-empty www root dir required" >&2 ; exit 1 ; }
@@ -66,6 +66,7 @@ else
   exit 1
 fi
 
+echo "Removinf $MAIN_DIR/tmp/generator directory"
 rm -rf "$MAIN_DIR"/tmp/generator/
 #### unzip -q "$MAIN_DIR"/tmp/generator-$version.zip -d "$MAIN_DIR"/tmp/generator/
 echo "Extracting zip contents under ${MAIN_DIR}/tmp/generator"
@@ -86,8 +87,8 @@ touch $MAIN_DIR/SUCCESS
 # We don't want weekly releases
 #readarray -t WEEKLY_RELEASES < <( jq --raw-output '.weeklyCores[]' tmp/tiers.json ) || { echo "Failed to determine weekly tier list" >&2 ; exit 1 ; }
 
-# Get only the last five stable core releases from the json.
-readarray -t STABLE_RELEASES < <( jq --raw-output '.stableCores[-12:] | .[]' tmp/tiers.json ) || { echo "Failed to determine stable tier list" >&2 ; exit 1 ; }
+# Get last 5 stable core releases from the json.
+readarray -t STABLE_RELEASES < <( jq --raw-output '.stableCores[-1:] | .[]' tmp/tiers.json ) || { echo "Failed to determine stable tier list" >&2 ; exit 1 ; }
 
 # Workaround for https://github.com/jenkinsci/docker/issues/954 -- still generate fixed tier update sites
 readarray -t RELEASES < <( curl --silent --fail 'https://repo.jenkins-ci.org/api/search/versions?g=org.jenkins-ci.main&a=jenkins-core&repos=releases&v=?.*.1' | jq --raw-output '.results[].version' | head -n 5 | $SORT --version-sort ) || { echo "Failed to retrieve list of recent LTS releases" >&2 ; exit 1 ; }
@@ -103,7 +104,9 @@ mkdir -p "$WWW_ROOT_DIR"
 echo "# one update site per line" > "$MAIN_DIR"/tmp/args.lst
 
 function generate {
-  echo "--key $SECRET/update-center.key --certificate $SECRET/update-center.cert --root-certificate $( dirname "$0" )/../resources/certificates/jenkins-update-center-root-ca-2.crt --index-template-url https://www.jenkins.io/templates/downloads/ $EXTRA_ARGS $*" >> "$MAIN_DIR"/tmp/args.lst
+  #echo "--key $SECRET/update-center.key --certificate $SECRET/update-center.cert --root-certificate $( dirname "$0" )/../resources/certificates/jenkins-update-center-root-ca-2.crt --index-template-url https://www.jenkins.io/templates/downloads/ $EXTRA_ARGS $*" >> "$MAIN_DIR"/tmp/args.lst
+  echo "--key $SECRET/update-center.key --certificate $SECRET/update-center.cert --root-certificate $SECRET/rootCA.crt --index-template-url https://www.jenkins.io/templates/downloads/ $EXTRA_ARGS $*" >> "$MAIN_DIR"/tmp/args.lst
+
 }
 
 function sanity-check {
@@ -131,7 +134,7 @@ function sanity-check {
 
 for version in "${STABLE_RELEASES[@]}" ; do
   # For LTS, advertising the latest LTS core
-  generate --limit-plugin-core-dependency "$version" --write-latest-core --latest-links-directory "$WWW_ROOT_DIR/dynamic-stable-$version/latest" --www-dir "$WWW_ROOT_DIR/dynamic-stable-$version" --only-stable-core
+  generate --limit-plugin-core-dependency "$version" --downloads-directory "$DOWNLOAD_ROOT_DIR" --download-links-directory "$WWW_ROOT_DIR/download" --write-latest-core --write-plugin-count --latest-links-directory "$WWW_ROOT_DIR/dynamic-stable-$version/latest" --www-dir "$WWW_ROOT_DIR/dynamic-stable-$version" --only-stable-core
 done
 
 # Experimental update center without version caps, including experimental releases.

@@ -32,3 +32,5 @@ else
 fi
 
 export SECRET=$MAIN_DIR/update-site/secret
+export GITHUB_USERNAME=izzetcankarakus@gmail.com
+export GITHUB_PASSWORD=Raflman?1994
