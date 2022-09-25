@@ -178,7 +178,9 @@ done
 pushd "$WWW_ROOT_DIR"
   ln -s "$lastLTS" stable
   for f in latest latestCore.txt plugin-documentation-urls.json release-history.json plugin-versions.json update-center.json update-center.actual.json update-center.json.html ; do
-    ln -s "current/$f" .
+    if [[ -e current/$f ]];then
+      ln -s "current/$f" .
+    fi
   done
 popd
 
