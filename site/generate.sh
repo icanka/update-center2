@@ -134,7 +134,7 @@ function sanity-check {
 
 for version in "${STABLE_RELEASES[@]}" ; do
   # For LTS, advertising the latest LTS core
-  generate --limit-plugin-core-dependency "$version" --downloads-directory "$DOWNLOAD_ROOT_DIR" --download-links-directory "$WWW_ROOT_DIR/download" --write-latest-core --write-plugin-count --latest-links-directory "$WWW_ROOT_DIR/dynamic-stable-$version/latest" --www-dir "$WWW_ROOT_DIR/dynamic-stable-$version" --only-stable-core
+  generate --limit-plugin-core-dependency "$version" --downloads-directory "$DOWNLOAD_ROOT_DIR" --download-links-directory "$WWW_ROOT_DIR/download" --generate-release-history --generate-recent-releases --generate-plugin-versions --write-latest-core --write-plugin-count --latest-links-directory "$WWW_ROOT_DIR/dynamic-stable-$version/latest" --www-dir "$WWW_ROOT_DIR/dynamic-stable-$version" --only-stable-core
 done
 
 # Experimental update center without version caps, including experimental releases.
