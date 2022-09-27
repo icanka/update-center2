@@ -7,4 +7,3 @@ services:
     - '8080:80'
     volumes:
     - /home/izzetcan/Documents/git-repos/update-center2/update-site/www2:/usr/local/apache2/htdocs
-    - /home/izzetcan/Documents/git-repos/update-center2/update-site/download:/usr/local/apache2/htdocs/download

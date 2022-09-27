@@ -87,8 +87,8 @@ touch $MAIN_DIR/SUCCESS
 # We don't want weekly releases
 #readarray -t WEEKLY_RELEASES < <( jq --raw-output '.weeklyCores[]' tmp/tiers.json ) || { echo "Failed to determine weekly tier list" >&2 ; exit 1 ; }
 
-# Get last 5 stable core releases from the json.
-readarray -t STABLE_RELEASES < <( jq --raw-output '.stableCores[-1:] | .[]' tmp/tiers.json ) || { echo "Failed to determine stable tier list" >&2 ; exit 1 ; }
+# Get all 15 stable core releases from the json.
+readarray -t STABLE_RELEASES < <( jq --raw-output '.stableCores[-15:] | .[]' tmp/tiers.json ) || { echo "Failed to determine stable tier list" >&2 ; exit 1 ; }
 
 # Workaround for https://github.com/jenkinsci/docker/issues/954 -- still generate fixed tier update sites
 readarray -t RELEASES < <( curl --silent --fail 'https://repo.jenkins-ci.org/api/search/versions?g=org.jenkins-ci.main&a=jenkins-core&repos=releases&v=?.*.1' | jq --raw-output '.results[].version' | head -n 5 | $SORT --version-sort ) || { echo "Failed to retrieve list of recent LTS releases" >&2 ; exit 1 ; }
@@ -134,7 +134,7 @@ function sanity-check {
 
 for version in "${STABLE_RELEASES[@]}" ; do
   # For LTS, advertising the latest LTS core
-  generate --limit-plugin-core-dependency "$version" --downloads-directory "$DOWNLOAD_ROOT_DIR" --download-links-directory "$WWW_ROOT_DIR/download" --generate-release-history --generate-recent-releases --generate-plugin-versions --write-latest-core --write-plugin-count --latest-links-directory "$WWW_ROOT_DIR/dynamic-stable-$version/latest" --www-dir "$WWW_ROOT_DIR/dynamic-stable-$version" --only-stable-core
+  generate --limit-plugin-core-dependency "$version" --limit-core-release "$version" --downloads-directory "$DOWNLOAD_ROOT_DIR" --download-links-directory "$WWW_ROOT_DIR/download" --generate-release-history --generate-recent-releases --generate-plugin-versions --write-latest-core --write-plugin-count --latest-links-directory "$WWW_ROOT_DIR/dynamic-stable-$version/latest" --www-dir "$WWW_ROOT_DIR/dynamic-stable-$version" --only-stable-core
 done
 
 # Experimental update center without version caps, including experimental releases.
