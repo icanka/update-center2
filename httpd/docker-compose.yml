@@ -4,6 +4,6 @@ services:
     image: update-center2
     container_name: update-center
     ports:
-    - '8080:80'
+    - '80:80'
     volumes:
-    - /home/izzetcan/Documents/git-repos/update-center2/update-site/www2:/usr/local/apache2/htdocs
+    - /home/raflman/Documents/git-repos/update-center2/update-site/www2:/usr/local/apache2/htdocs

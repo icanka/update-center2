@@ -1,6 +1,7 @@
 #!/bin/bash
 SCRIPT_DIR=$(dirname "$0")
 MAIN_DIR=$(readlink -f "$SCRIPT_DIR"/../ 2>/dev/null)
+export DOWNLOADS_ROOT_URL='https://update-center/download'
 
 if type -p java &>/dev/null; then
     echo "Found java executable in PATH"

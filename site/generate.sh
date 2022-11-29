@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # Usage: SECRET=dirname ./site/generate.sh "./www2" "./download"
+# example usage: ./site/generate.sh update-site/www2 update-site/download 
 
 SIMPLE_SCRIPT_DIR="$( dirname "$0" )"
 MAIN_DIR="$( readlink -f "$SIMPLE_SCRIPT_DIR/../" 2>/dev/null || greadlink -f "$SIMPLE_SCRIPT_DIR/../" )" || { echo "Failed to determine script directory using (g)readlink -f" >&2 ; exit 1 ; }

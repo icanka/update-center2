@@ -18,8 +18,7 @@
 /www2/
 
 # update site itself
-/update-site
-/update-site/*
+/update-site/
 
 # Execution caches dirs
 /caches/
