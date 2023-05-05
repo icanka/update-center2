@@ -55,7 +55,7 @@ echo "Main dir: ${MAIN_DIR}"
 echo "Creating tmp directory"
 mkdir -p "$MAIN_DIR"/tmp/
 
-version=3.15
+version=3.16
 coordinates=org/jenkins-ci/update-center2/$version/update-center2-$version-bin.zip
 coordinates=$MAIN_DIR/target/update-center2-$version-bin.zip
 echo "Project zip file coordinates: ${coordinates}"
